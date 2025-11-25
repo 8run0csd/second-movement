@@ -75,47 +75,62 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
     switch (phase_index) {
         case 0:
         case 8:
-            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "NE!J  ", " Neu  ");
             if (!state->show_lunar_day) 
+            {
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "   ", "  ");
-            else {
+            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "NE!J  ", " Neu  ");
+            } else {
+            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "NEW", "Nu");
             sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
             watch_display_text(WATCH_POSITION_HOURS, buf); //aj
             watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
             watch_set_colon();
             
-            sprintf(buf, "%02d%d",  currentday_int, currentday_frac_); //aj
-            buf[0] = '7';//currentday_frac_;
-            buf[1] = '6';//currentday_frac_;
-            buf[2] = '5';//currentday_frac_;
+            //sprintf(buf, "%02d%d",  currentday_int, currentday_frac_); //aj
+            //buf[0] = '7';//currentday_frac_;
+            //buf[1] = '6';//currentday_frac_;
+            //buf[2] = '5';//currentday_frac_;
             
-            watch_display_text(WATCH_POSITION_TOP_LEFT, "    ");//buf);
+            //watch_display_text(WATCH_POSITION_TOP_LEFT, "    ");//buf);
             //watch_display_character('E', 9); //aj
             }
             
 
             break;
         case 1:
-            watch_display_text(WATCH_POSITION_BOTTOM, "CresNt");
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "WAX", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(2, 13);
                 watch_set_pixel(2, 15);
                 if (currentfrac > 0.125) watch_set_pixel(1, 13);
             }
+         if (!state->show_lunar_day) 
+            watch_display_text(WATCH_POSITION_BOTTOM, "CresNt");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
+            }
             break;
         case 2:
-            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "1stQtr", " 1st q");
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "WAX", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(2, 13);
                 watch_set_pixel(2, 15);
                 watch_set_pixel(1, 13);
                 watch_set_pixel(1, 14);
+            }
+            if (!state->show_lunar_day) 
+            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "1stQtr", " 1st q");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
             }
             break;
         case 3:
-            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "GbboUs", " Gibb ");
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "WAX", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(2, 13);
@@ -124,10 +139,16 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
                 watch_set_pixel(1, 13);
                 watch_set_pixel(1, 15);
             }
+            if (!state->show_lunar_day) 
+            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "GbboUs", " Gibb ");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
+            }
             break;
         case 4:
-            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "FULL  ", " FULL ");
-            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "   ", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(2, 13);
                 watch_set_pixel(2, 15);
@@ -138,9 +159,19 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
                 watch_set_pixel(0, 13);
                 watch_set_pixel(1, 13);
             }
+            if (!state->show_lunar_day) 
+            {
+            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "   ", "  ");
+            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "FULL  ", " FULL ");
+            } else {
+            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "FUL", "FL");
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
+            }
             break;
         case 5:
-            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "GbboUs", " Gibb ");
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "WAN", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(1, 14);
@@ -149,9 +180,16 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
                 watch_set_pixel(0, 14);
                 watch_set_pixel(0, 13);
             }
+            if (!state->show_lunar_day) 
+            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "GbboUs", " Gibb ");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
+            }
             break;
         case 6:
-            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "3rdQtr", " 3rd q");
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "WAN", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(1, 14);
@@ -159,14 +197,29 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
                 watch_set_pixel(0, 14);
                 watch_set_pixel(0, 13);
             }
+            if (!state->show_lunar_day) 
+            watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "3rdQtr", " 3rd q");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
+            }
             break;
         case 7:
-            watch_display_text(WATCH_POSITION_BOTTOM, "CresNt");
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "WAN", "  ");
             if (watch_get_lcd_type() == WATCH_LCD_TYPE_CLASSIC) {
                 watch_set_pixel(0, 14);
                 watch_set_pixel(0, 13);
                 if (currentfrac < 0.875) watch_set_pixel(2, 14);
+            }
+            if (!state->show_lunar_day) 
+            watch_display_text(WATCH_POSITION_BOTTOM, "CresNt");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
             }
             break;
     }
