@@ -116,6 +116,8 @@ const char settings_fallback_titles[SETTINGS_NUM][3] = { "YR", "MO", "DA", "HR",
 
 const char *running_title = "DUE";
 const char *running_fallback_title = "DL";
+const char *running_title_passed = "OVR"; // NOWY TYTUŁ DLA CZASU PO TERMINIE
+const char *running_fallback_title_passed = "OV"; // NOWY SKRÓCONY TYTUŁ
 
 /* Local functions */
 static void _deadline_running_init(deadline_state_t * state);
@@ -251,6 +253,20 @@ static void _calculate_time_remaining(watch_date_time_t dl, watch_date_time_t no
     units[5] = dl.unit.year - now.unit.year;
 }
 
+/* Calculate the naive difference between two times  -- new */
+static void _calculate_time_difference(watch_date_time_t t1, watch_date_time_t t2, int16_t *units)
+{
+    /* Units[0]:seconds, [1]:minutes, [2]:hours, [3]:days, [4]:months, [5]:years */
+    units[0] = t1.unit.second - t2.unit.second;
+    units[1] = t1.unit.minute - t2.unit.minute;
+    units[2] = t1.unit.hour - t2.unit.hour;
+    units[3] = t1.unit.day - t2.unit.day;
+    units[4] = t1.unit.month - t2.unit.month;
+    units[5] = t1.unit.year - t2.unit.year;
+}
+
+
+
 /* Format the remaining time for display */
 static void _format_time_remaining(int16_t *units, char *buffer, size_t buffer_size)
 {
@@ -342,9 +358,15 @@ static void _deadline_running_display(movement_event_t event, deadline_state_t *
     /* Seconds, minutes, hours, days, months, years */
     int16_t units[] = { 0, 0, 0, 0, 0, 0 };
     char buf[16];
-
+    /* Zmienne do dynamicznej kontroli tytułu */
+    const char *current_running_title = running_title;
+    const char *current_running_fallback_title = running_fallback_title;
+    watch_date_time_t now = movement_get_local_date_time();
+    uint32_t now_ts = watch_utility_date_time_to_unix_time(now, 0);
+    
+    uint32_t dl_ts = state->deadlines[state->current_index];
     /* Top row with face name and deadline index */
-    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, running_title, running_fallback_title);
+    //watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, running_title, running_fallback_title);
     sprintf(buf, "%2d", state->current_index + 1);
     watch_display_text_with_fallback(WATCH_POSITION_TOP_RIGHT, buf, buf);
 
@@ -354,31 +376,53 @@ static void _deadline_running_display(movement_event_t event, deadline_state_t *
     else
         watch_clear_indicator(WATCH_INDICATOR_BELL);
 
-    watch_date_time_t now = movement_get_local_date_time();
-    uint32_t now_ts = watch_utility_date_time_to_unix_time(now, 0);
-
+  
     /* Deadline expired */
-    if (state->deadlines[state->current_index] < now_ts) {
-        if (state->deadlines[state->current_index] + 24 * 60 * 60 > now_ts)
-            sprintf(buf, "OVER  ");
-        else
-            sprintf(buf, "----  ");
+    /*if (state->deadlines[state->current_index] < now_ts) {*/
+    /* Deadline expired (dl_ts < now_ts) */
+      // --- LOGIKA OVR ---
+    if (dl_ts < now_ts) {
+      current_running_title = running_title_passed; // "OVR"
+      current_running_fallback_title = running_fallback_title_passed; // "OV"
+    
+      // Czas, który upłynął (NOW - DEADLINE)    
+      watch_date_time_t deadline = watch_utility_date_time_from_unix_time(dl_ts, 0);
+      // Obliczamy czas, który upłynął (NOW - DEADLINE)
+        _calculate_time_difference(now, deadline, units);
+        _correct_time_difference(units, now); // Korygujemy względem now, ponieważ t_base to teraz NOW.  
+      // Używamy oryginalnej funkcji formatującej czas pozostały
+        _format_time_remaining(units, buf, sizeof(buf));
+      
+      watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, current_running_title, current_running_fallback_title);
 
+      // Jeśli jednostki są zerowe (ponad 24h minęło od dawna)
+        if (units[5] == 0 && units[4] == 0 && units[3] == 0 && units[2] == 0 && units[1] == 0 && units[0] == 0) {
+            sprintf(buf, "----  ");
+        }
+        
         watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, buf, buf);
-        return;
-    }
+    } else if (dl_ts > now_ts) {
+        /* Deadline jest w przyszłości (DUE) - ORYGINALNA LOGIKA */
+watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, running_title, running_fallback_title);
 
     /* Get date time structs */
-    uint32_t dl_ts = state->deadlines[state->current_index];
     watch_date_time_t deadline = watch_utility_date_time_from_unix_time(dl_ts, 0);
-
-    /* Calculate and format time remaining */
-    _calculate_time_remaining(deadline, now, units);
+    /* Calculate and format time remaining (DEADLINE - NOW) */
+    _calculate_time_difference(deadline, now, units);
     _correct_time_difference(units, deadline);
     _format_time_remaining(units, buf, sizeof(buf));
+    // Jeśli nie ma ustawionego deadline (lub minął bardzo dawno)
+        if (dl_ts == 0) {
+            sprintf(buf, "----  ");
+        }
+    
     watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, buf, buf);
+} else {
+        /* Deadline jest 0 lub jest RÓWNY now_ts */
+        sprintf(buf, "----  ");
+        watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, buf, buf);
+    }
 }
-
 /* Init running mode */
 static void _deadline_running_init(deadline_state_t *state)
 {

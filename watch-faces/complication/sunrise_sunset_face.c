@@ -34,13 +34,57 @@
 #include "watch_common_display.h"
 #include "filesystem.h"
 #include "sunriset.h"
+#include "delay.h" // Dodano do użycia delay_ms
 
 #if __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
 
-static const uint8_t _location_count = sizeof(longLatPresets) / sizeof(long_lat_presets_t);
 
+
+/* Play background alarm */ // skopiowano z deadline face
+static void _background_alarm_play(sunrise_sunset_state_t *state)
+{
+            // Alarm! Sygnał 10 minut przed wschodem/zachodem
+            static int8_t beep_sequence[] = {
+            BUZZER_NOTE_A6, 5,
+            BUZZER_NOTE_REST, 4,
+            BUZZER_NOTE_C7, 5,
+            BUZZER_NOTE_REST, 4,
+            BUZZER_NOTE_D7SHARP_E7FLAT, 10,
+            BUZZER_NOTE_REST, 2,
+            BUZZER_NOTE_E7, 5,
+            0
+            };
+            movement_play_sequence(beep_sequence, 0);
+            //movement_play_alarm();
+            // Opcjonalnie: Włącz diodę LED na chwilę, aby była widoczna sygnalizacja.
+            watch_set_led_red();
+            watch_set_indicator(WATCH_INDICATOR_BELL);
+            delay_ms(100);
+            watch_set_led_off();
+            watch_clear_indicator(WATCH_INDICATOR_BELL);
+            delay_ms(100);
+            watch_set_led_red();
+            watch_set_indicator(WATCH_INDICATOR_BELL);
+            delay_ms(100);
+            watch_set_led_off();
+            watch_clear_indicator(WATCH_INDICATOR_BELL);
+            //movement_illuminate_led();
+          
+            //movement_move_to_page(movement_face_to_page(state->page));
+            movement_move_to_page(movement_face_to_page(state->face_idx));
+            
+}
+
+static inline void button_beep() {
+    // play a beep as confirmation for a button press (if applicable)
+    if (movement_button_should_sound()) watch_buzzer_play_note_with_volume(BUZZER_NOTE_C7, 50, movement_button_volume());
+}
+
+
+
+static const uint8_t _location_count = sizeof(longLatPresets) / sizeof(long_lat_presets_t);
 static void persist_location_to_filesystem(movement_location_t new_location) {
     movement_location_t maybe_location = {0};
 
@@ -62,6 +106,153 @@ static void _sunrise_sunset_set_expiration(sunrise_sunset_state_t *state, watch_
     uint32_t timestamp = watch_utility_date_time_to_unix_time(next_rise_set, 0);
     state->rise_set_expires = watch_utility_date_time_from_unix_time(timestamp + 60, 0);
 }
+
+// NOWA FUNKCJA: Oblicza najbliższy czas Wschodu lub Zachodu słońca.
+static watch_date_time_t _sunrise_sunset_face_get_next_event(sunrise_sunset_state_t *state) {
+    double rise, set, minutes;
+    movement_location_t movement_location;
+    watch_date_time_t next_rise_dt = {0};
+    watch_date_time_t next_set_dt = {0};
+    uint32_t next_rise_ts = UINT32_MAX;
+    uint32_t next_set_ts = UINT32_MAX;
+
+    if (state->longLatToUse == 0 || _location_count <= 1)
+        movement_location = load_location_from_filesystem();
+    else{
+        movement_location.bit.latitude = longLatPresets[state->longLatToUse].latitude;
+        movement_location.bit.longitude = longLatPresets[state->longLatToUse].longitude;
+    }
+
+    if (movement_location.reg == 0) {
+        return (watch_date_time_t) { .reg = 0 };
+    }
+
+    watch_date_time_t date_time = movement_get_local_date_time();
+    watch_date_time_t utc_now = watch_utility_date_time_convert_zone(date_time, movement_get_current_timezone_offset(), 0);
+    watch_date_time_t scratch_time;
+    scratch_time.reg = utc_now.reg;
+
+    int16_t lat_centi = (int16_t)movement_location.bit.latitude;
+    int16_t lon_centi = (int16_t)movement_location.bit.longitude;
+
+    double lat = (double)lat_centi / 100.0;
+    double lon = (double)lon_centi / 100.0;
+    double hours_from_utc = ((double)movement_get_current_timezone_offset()) / 3600.0;
+    
+    // Pętla na 2 dni (dzisiaj i jutro)
+    for(int i = 0; i < 2; i++) {
+        uint8_t result = sun_rise_set(scratch_time.unit.year + WATCH_RTC_REFERENCE_YEAR, scratch_time.unit.month, scratch_time.unit.day, lon, lat, &rise, &set);
+
+        if (result != 0) {
+            // Dzień/noc polarna
+        } else {
+            // Obliczanie czasu wschodu
+            double local_rise = rise + hours_from_utc;
+            minutes = 60.0 * fmod(local_rise, 1);
+            
+            watch_date_time_t rise_dt = scratch_time;
+            rise_dt.unit.hour = floor(local_rise);
+            //seconds nie jest potrzebny do godziny
+            if (fmod(minutes, 1) < 0.5) rise_dt.unit.minute = floor(minutes);
+            else rise_dt.unit.minute = ceil(minutes);
+
+            // Poprawka na przekroczenie 24h
+            if (rise_dt.unit.minute == 60) { rise_dt.unit.minute = 0; rise_dt.unit.hour = (rise_dt.unit.hour + 1) % 24; }
+            while (rise_dt.unit.hour >= 24) { 
+                rise_dt.unit.hour -= 24; 
+                uint32_t ts = watch_utility_date_time_to_unix_time(rise_dt, 0);
+                ts += 86400; // Dodaj dzień
+                rise_dt = watch_utility_date_time_from_unix_time(ts, 0);
+            }
+            
+            uint32_t rise_ts = watch_utility_date_time_to_unix_time(rise_dt, 0);
+
+            if (rise_ts > watch_utility_date_time_to_unix_time(date_time, 0) && rise_ts < next_rise_ts) {
+                next_rise_ts = rise_ts;
+                next_rise_dt = rise_dt;
+            }
+
+            // Obliczanie czasu zachodu
+            double local_set = set + hours_from_utc;
+            minutes = 60.0 * fmod(local_set, 1);
+            
+            watch_date_time_t set_dt = scratch_time;
+            set_dt.unit.hour = floor(local_set);
+            if (fmod(minutes, 1) < 0.5) set_dt.unit.minute = floor(minutes);
+            else set_dt.unit.minute = ceil(minutes);
+
+            // Poprawka na przekroczenie 24h
+            if (set_dt.unit.minute == 60) { set_dt.unit.minute = 0; set_dt.unit.hour = (set_dt.unit.hour + 1) % 24; }
+            while (set_dt.unit.hour >= 24) { 
+                set_dt.unit.hour -= 24; 
+                uint32_t ts = watch_utility_date_time_to_unix_time(set_dt, 0);
+                ts += 86400; // Dodaj dzień
+                set_dt = watch_utility_date_time_from_unix_time(ts, 0);
+            }
+            
+            uint32_t set_ts = watch_utility_date_time_to_unix_time(set_dt, 0);
+
+            if (set_ts > watch_utility_date_time_to_unix_time(date_time, 0) && set_ts < next_set_ts) {
+                next_set_ts = set_ts;
+                next_set_dt = set_dt;
+            }
+        }
+        
+        // Przesunięcie na następny dzień
+        uint32_t timestamp = watch_utility_date_time_to_unix_time(utc_now, 0);
+        timestamp += 86400;
+        scratch_time = watch_utility_date_time_from_unix_time(timestamp, 0);
+    }
+    
+    // Zwróć bliższy czas
+    if (next_rise_ts < next_set_ts) {
+        return next_rise_dt;
+    } else if (next_set_ts < next_rise_ts) {
+        return next_set_dt;
+    } else {
+        return (watch_date_time_t) { .reg = 0 };
+    }
+}
+
+//***********************
+static void _display_countdown(watch_date_time_t target_dt, bool is_rise) {
+// ... (Oryginalna implementacja _display_countdown pozostaje bez zmian)
+    char buf[8];
+    watch_date_time_t now = movement_get_local_date_time();
+    uint32_t now_ts = watch_utility_date_time_to_unix_time(now, 0);
+    uint32_t target_ts = watch_utility_date_time_to_unix_time(target_dt, 0);
+
+    //watch_clear_display();
+    
+    // Wskaźnik tytułu i symbolu
+    watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "TIL", "Lt"); 
+    watch_display_text_with_fallback(WATCH_POSITION_TOP_RIGHT, is_rise ? "L " : "L ", is_rise ? "L" : "L");
+    watch_set_colon();
+
+    if (target_ts <= now_ts) {
+        // Czas minął
+        watch_display_text(WATCH_POSITION_BOTTOM, "DONE");
+        return;
+    }
+
+    int32_t remaining_seconds = target_ts - now_ts;
+    
+    uint32_t remaining_minutes = remaining_seconds / 60;
+    uint32_t remaining_hours = remaining_minutes / 60;
+    uint32_t remaining_days = remaining_hours / 24;
+    
+    if (remaining_days > 0) {
+        // DD:HH
+        snprintf(buf, sizeof(buf), "%02lu%02luDH", remaining_days, remaining_hours % 24);
+        watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, buf, buf);
+    } else {
+        // HH:MM:SS
+        snprintf(buf, sizeof(buf), "%02lu%02lu%02lu", remaining_hours, remaining_minutes % 60, remaining_seconds % 60);
+        watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, buf, buf);
+    }
+}
+
+//******************
 
 static void _sunrise_sunset_face_update(sunrise_sunset_state_t *state) {
     char buf[14];
@@ -124,6 +315,8 @@ static void _sunrise_sunset_face_update(sunrise_sunset_state_t *state) {
         minutes = 60.0 * fmod(rise, 1);
         seconds = 60.0 * fmod(minutes, 1);
         scratch_time.unit.hour = floor(rise);
+        scratch_time.unit.second = seconds;// aj
+        
         if (seconds < 30) scratch_time.unit.minute = floor(minutes);
         else scratch_time.unit.minute = ceil(minutes);
 
@@ -141,24 +334,33 @@ static void _sunrise_sunset_face_update(sunrise_sunset_state_t *state) {
             scratch_time.unit.hour = (scratch_time.unit.hour + 1) % 24;
         }
 
-        if (date_time.reg < scratch_time.reg) _sunrise_sunset_set_expiration(state, scratch_time);
 
+//************************
+            
+        if (date_time.reg < scratch_time.reg) _sunrise_sunset_set_expiration(state, scratch_time);
         if (date_time.reg < scratch_time.reg || show_next_match) {
-            if (state->rise_index == 0 || show_next_match) {
-                if (!movement_clock_mode_24h()) {
-                    if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
-                    else watch_clear_indicator(WATCH_INDICATOR_PM);
-                }
-                watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "RIS", "rI");
-                sprintf(buf, "%2d", scratch_time.unit.day);
-                watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
-                sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
-                watch_display_text(WATCH_POSITION_BOTTOM, buf);
-                return;
-            } else {
-                show_next_match = true;
-            }
+        if (state->rise_index == 0 || state->rise_index == 2 || show_next_match) { // Dodano rise_index == 2
+        if (state->rise_index == 2) {
+            _display_countdown(scratch_time, true);
+            return;
         }
+
+        if (state->rise_index == 0 || show_next_match) {
+            if (!movement_clock_mode_24h()) {
+                if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
+                else watch_clear_indicator(WATCH_INDICATOR_PM);
+            }
+            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "RIS", "rI");
+            sprintf(buf, "%2d", scratch_time.unit.day);
+            watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
+            sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
+            watch_display_text(WATCH_POSITION_BOTTOM, buf);
+            return;
+        }
+    } else {
+        show_next_match = true;
+    }
+}
 
         minutes = 60.0 * fmod(set, 1);
         seconds = 60.0 * fmod(minutes, 1);
@@ -180,24 +382,33 @@ static void _sunrise_sunset_face_update(sunrise_sunset_state_t *state) {
             scratch_time.unit.hour = (scratch_time.unit.hour + 1) % 24;
         }
 
-        if (date_time.reg < scratch_time.reg) _sunrise_sunset_set_expiration(state, scratch_time);
+//*************
 
+        if (date_time.reg < scratch_time.reg) _sunrise_sunset_set_expiration(state, scratch_time);
         if (date_time.reg < scratch_time.reg || show_next_match) {
-            if (state->rise_index == 0 || show_next_match) {
-                if (!movement_clock_mode_24h()) {
-                    if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
-                    else watch_clear_indicator(WATCH_INDICATOR_PM);
-                }
-                watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "SET", "SE");
-                sprintf(buf, "%2d", scratch_time.unit.day);
-                watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
-                sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
-                watch_display_text(WATCH_POSITION_BOTTOM, buf);
-                return;
-            } else {
-                show_next_match = true;
-            }
+        if (state->rise_index == 0 || state->rise_index == 2 || show_next_match) { // Dodano rise_index == 2
+        if (state->rise_index == 2) {
+            _display_countdown(scratch_time, false);
+            return;
         }
+        
+        if (state->rise_index == 0 || show_next_match) {
+            if (!movement_clock_mode_24h()) {
+                if (watch_utility_convert_to_12_hour(&scratch_time)) watch_set_indicator(WATCH_INDICATOR_PM);
+                else watch_clear_indicator(WATCH_INDICATOR_PM);
+            }
+            watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "SET", "SE");
+            sprintf(buf, "%2d", scratch_time.unit.day);
+            watch_display_text(WATCH_POSITION_TOP_RIGHT, buf);
+            sprintf(buf, "%2d%02d%2s", scratch_time.unit.hour, scratch_time.unit.minute,longLatPresets[state->longLatToUse].name);
+            watch_display_text(WATCH_POSITION_BOTTOM, buf);
+            return;
+        }
+    } else {
+        show_next_match = true;
+    }
+}
+//***************
 
         // it's after sunset. we need to display sunrise/sunset for tomorrow.
         uint32_t timestamp = watch_utility_date_time_to_unix_time(utc_now, 0);
@@ -251,7 +462,7 @@ static void _sunrise_sunset_face_update_location_register(sunrise_sunset_state_t
 static void _sunrise_sunset_face_update_settings_display(movement_event_t event, sunrise_sunset_state_t *state) {
     char buf[12];
 
-    watch_clear_display();
+//    watch_clear_display();
 
     switch (state->page) {
         case 0:
@@ -456,6 +667,11 @@ void sunrise_sunset_face_setup(uint8_t watch_face_index, void ** context_ptr) {
     if (*context_ptr == NULL) {
         *context_ptr = malloc(sizeof(sunrise_sunset_state_t));
         memset(*context_ptr, 0, sizeof(sunrise_sunset_state_t));
+        // NOWA INICJALIZACJA:
+        sunrise_sunset_state_t *state = (sunrise_sunset_state_t *) *context_ptr;
+        state->alarm_enabled = false;
+        state->next_event_time.reg = 0;
+        state->face_idx = watch_face_index;
     }
 }
 
@@ -481,6 +697,11 @@ void sunrise_sunset_face_activate(void *context) {
     movement_location_t movement_location = load_location_from_filesystem();
     state->working_latitude = _sunrise_sunset_face_struct_from_latlon(movement_location.bit.latitude);
     state->working_longitude = _sunrise_sunset_face_struct_from_latlon(movement_location.bit.longitude);
+    state->rise_index = 2;
+    
+    //Pokaż wskaźnik alarmu, jeśli jest włączony
+    if (state->alarm_enabled) watch_set_indicator(WATCH_INDICATOR_BELL);
+    else watch_clear_indicator(WATCH_INDICATOR_BELL);
 }
 
 bool sunrise_sunset_face_loop(movement_event_t event, void *context) {
@@ -492,7 +713,8 @@ bool sunrise_sunset_face_loop(movement_event_t event, void *context) {
             break;
         case EVENT_LOW_ENERGY_UPDATE:
         case EVENT_TICK:
-            if (state->page == 0) {
+            _sunrise_sunset_face_update(state);
+                if (state->page == 0) {
                 // if entering low energy mode, start tick animation
                 if (event.event_type == EVENT_LOW_ENERGY_UPDATE && !watch_sleep_animation_is_running()) watch_start_sleep_animation(1000);
                 // check if we need to update the display
@@ -534,8 +756,25 @@ bool sunrise_sunset_face_loop(movement_event_t event, void *context) {
             }
             break;
         case EVENT_LIGHT_LONG_PRESS:
-            if (_location_count <= 1) break;
-            else if (!state->page) movement_illuminate_led();
+            // Zmieniona logika: Włączenie/wyłączenie alarmu.
+            
+            if (state->rise_index == 2){
+            
+            if (!state->page) {
+                state->alarm_enabled = !state->alarm_enabled;
+                if (state->alarm_enabled) {
+                    watch_set_indicator(WATCH_INDICATOR_BELL);
+                    // beep to confirm setting.
+                    button_beep();
+                } else {
+                    watch_clear_indicator(WATCH_INDICATOR_BELL);
+                    // beep to confirm setting.
+                    button_beep();
+                }
+                }
+                } else movement_illuminate_led(); // Zachowanie oryginalnej logiki dla <1 presetów
+                //if (_location_count <= 1) movement_illuminate_led();
+                
             break;
         case EVENT_LIGHT_BUTTON_UP:
             if (state->page == 0 && _location_count > 1) {
@@ -548,8 +787,24 @@ bool sunrise_sunset_face_loop(movement_event_t event, void *context) {
                 _sunrise_sunset_face_advance_digit(state);
                 _sunrise_sunset_face_update_settings_display(event, context);
             } else {
-                state->rise_index = (state->rise_index + 1) % 2;
                 _sunrise_sunset_face_update(state);
+                state->rise_index++;
+                if (state->rise_index > 2) {
+                    state->rise_index = 0;
+                }
+                state->rise_index = (state->rise_index + 1) % 3;
+                if (state->rise_index == 2) { // Jeśli jesteśmy na 2 (odliczanie)
+                state->rise_index = 0; // Przejdź do 0 (pierwszy czas)
+                } else if (state->rise_index == 0) {
+                    state->rise_index = 1; // Przejdź do 1 (drugi czas)
+                } else if (state->rise_index == 1) {
+                    state->rise_index = 2; // Przejdź do 2 (odliczanie)
+                }
+                
+                // ZMIANA: Cykl 3-elementowy dla ekranów 0, 1, 2
+                state->rise_index = (state->rise_index + 1) % 3;
+                _sunrise_sunset_face_update(state);
+                
             }
             break;
         case EVENT_ALARM_LONG_PRESS:
@@ -569,6 +824,7 @@ bool sunrise_sunset_face_loop(movement_event_t event, void *context) {
                 state->active_digit = 0;
                 state->page = 0;
                 _sunrise_sunset_face_update_location_register(state);
+                state->rise_index = 2;
                 _sunrise_sunset_face_update(state);
             }
             break;
@@ -576,13 +832,17 @@ bool sunrise_sunset_face_loop(movement_event_t event, void *context) {
             if (load_location_from_filesystem().reg == 0) {
                 // if no location set, return home
                 movement_move_to_page(0);
-            } else if (state->page || state->rise_index) {
-                // otherwise on timeout, exit settings mode and return to the next sunrise or sunset
+            }  else if (state->page || state->rise_index) {
+                 //otherwise on timeout, exit settings mode and return to the next sunrise or sunset
                 state->page = 0;
-                state->rise_index = 0;
+                state->rise_index = 2;
                 movement_request_tick_frequency(1);
                 _sunrise_sunset_face_update(state);
+                movement_move_to_page(0);
             }
+            break;
+        case EVENT_BACKGROUND_TASK:
+            _background_alarm_play(state); //skopiowano z deadline face
             break;
         default:
             return movement_default_loop_handler(event);
@@ -597,4 +857,55 @@ void sunrise_sunset_face_resign(void *context) {
     state->active_digit = 0;
     state->rise_index = 0;
     _sunrise_sunset_face_update_location_register(state);
+    
+     //Wyczyść wskaźnik alarmu przy rezygnacji
+    //watch_clear_indicator(WATCH_INDICATOR_BELL);
 }
+
+movement_watch_face_advisory_t sunrise_sunset_face_advise(void *context) {
+    sunrise_sunset_state_t *state = (sunrise_sunset_state_t *) context;
+    movement_watch_face_advisory_t retval = { 0 };
+    // Alarm musi być włączony
+    if (!state->alarm_enabled)
+        return retval;
+
+    // Upewniamy się, że mamy aktualnie najbliższy czas zdarzenia
+    state->next_event_time = _sunrise_sunset_face_get_next_event(state);
+
+    if (state->next_event_time.reg == 0)
+        return retval; // Brak zdarzeń w najbliższym czasie lub problem z lokalizacją
+
+    // Pobranie aktualnego czasu
+    watch_date_time_t now = movement_get_local_date_time();
+    uint32_t now_ts = watch_utility_date_time_to_unix_time(now, 0);
+
+    // Czas najbliższego zdarzenia
+    uint32_t next_event_ts = watch_utility_date_time_to_unix_time(state->next_event_time, 0);
+    
+    // Czas alarmu: 10 minut (600 sekund) przed zdarzeniem
+    uint32_t alarm_ts = next_event_ts > 600 ? next_event_ts - 600 : 0; 
+
+    if (alarm_ts < now_ts)
+        return retval; // Czas na alarm już minął
+
+    // Czy czas alarmu mieści się w następnej minucie?
+    if (alarm_ts < now_ts + 60) { 
+        retval.wants_background_task = true;
+    }
+
+    return retval;
+}
+
+
+//movement_watch_face_advisory_t sunrise_sunset_face_advise(void *context) {
+ //   (void) context;
+ //   movement_watch_face_advisory_t retval = { 0 };
+
+    // this will get called at the top of each minute, so all we check is if we're at the top of the hour as well.
+    // if we are, we ask for a background task.
+   // retval.wants_background_task = true;
+
+  //  return retval;
+//}
+
+

@@ -35,13 +35,13 @@ typedef enum {
 } deadline_mode_t;
 
 /* Number of deadline dates */
-#define DEADLINE_FACE_DATES (4)
+#define DEADLINE_FACE_DATES (6)
 
 /* Deadline configuration */
 typedef struct {
     deadline_mode_t mode:1;
     uint8_t current_page:3;
-    uint8_t current_index:2;
+    uint8_t current_index:3;
     uint8_t alarm_enabled:1;
     uint8_t tick_freq;
     uint8_t face_idx;

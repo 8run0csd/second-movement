@@ -56,19 +56,23 @@ typedef struct {
     sunrise_sunset_lat_lon_settings_t working_latitude;
     sunrise_sunset_lat_lon_settings_t working_longitude;
     uint8_t longLatToUse;
+    watch_date_time_t next_event_time; //aj
+    bool alarm_enabled; // aj
+    uint8_t face_idx;
 } sunrise_sunset_state_t;
 
 void sunrise_sunset_face_setup(uint8_t watch_face_index, void ** context_ptr);
 void sunrise_sunset_face_activate(void *context);
 bool sunrise_sunset_face_loop(movement_event_t event, void *context);
 void sunrise_sunset_face_resign(void *context);
+movement_watch_face_advisory_t sunrise_sunset_face_advise(void *context);
 
 #define sunrise_sunset_face ((const watch_face_t){ \
     sunrise_sunset_face_setup, \
     sunrise_sunset_face_activate, \
     sunrise_sunset_face_loop, \
     sunrise_sunset_face_resign, \
-    NULL, \
+    sunrise_sunset_face_advise, \
 })
 
 typedef struct {
@@ -80,7 +84,7 @@ typedef struct {
 static const long_lat_presets_t longLatPresets[] =
 {
     { .name = "  "},  // Default, the long and lat get replaced by what's set in the watch
-//    { .name = "Ny", .latitude = 4072, .longitude = -7401 },  // New York City, NY
+    { .name = "WO", .latitude = 5347, .longitude = 1443 },  // New York City, NY
 //    { .name = "LA", .latitude = 3405, .longitude = -11824 },  // Los Angeles, CA
 //    { .name = "dE", .latitude = 4221, .longitude = -8305 },  // Detroit, MI
 };

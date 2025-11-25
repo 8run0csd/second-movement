@@ -57,6 +57,10 @@ typedef enum {
 #define ALARM_FACE_CHIME_INDEX (ALARM_FACE_NUM_ALARMS - 1)
 #define ALARM_FACE_SNOOZE_DELAY 5
 #define ALARM_FACE_SNOOZE_REPETITIONS 7
+#define CHIME_START_HOUR 6  //aj
+#define CHIME_START_MINUTE 10  //aj
+#define CHIME_END_HOUR 21   //aj
+#define CHIME_END_MINUTE 50   //aj
 
 typedef struct {
     uint32_t hour : 5;

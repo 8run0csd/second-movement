@@ -47,15 +47,13 @@
  * each button press, and both the text and the graphical representation will
  * display the moon phase for that day. Try pressing the Alarm button 27 times
  * now, just to visualize what the moon will look like over the next month.
- * Pressing the Light button will move back in time.
- * 
- * Holding the Light button will illuminate the display.
  */
 
 #include "movement.h"
 
 typedef struct {
     uint32_t offset;
+    bool show_lunar_day;
 } moon_phase_state_t;
 
 void moon_phase_face_setup(uint8_t watch_face_index, void ** context_ptr);

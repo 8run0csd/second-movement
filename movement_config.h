@@ -31,37 +31,47 @@
 
 #define PRIMARY_FACES(F) \
     F(stock_clock) \
-    F(alarm) \
     F(fast_stopwatch) \
     F(countdown) \
-    F(sunrise_sunset) \
-    F(moon_phase)
+    F(timer) \
+    F(alarm) \
+    F(moon_phase) \
+    F(sunrise_sunset) 
 
 #define SECONDARY_FACES(F) \
-    F(totp_lfs) \
-    F(tunes) \
-    F(probability) \
-    F(wordle) \
-    F(counter)
+    F(close_enough) \
+    F(ke_decimal_time) \
+    F(step_counter) \
+    F(deadline) \
+    F(pulsometer) \
+    F(character_set)
 
 #define TERTIARY_FACES(F) \
+    F(voltage) \
+    F(temperature_logging) \
+    F(activity_logging) \
+    F(accelerometer_status) \
+    F(endless_runner) \
+    F(higher_lower_game) \
+    F(lander) \
+    F(simon) \
+    F(probability) \
+    F(wordle) \
+    F(tunes) \
+    F(page_ordering) \
     F(settings) \
     F(set_time) \
-    F(page_ordering) \
-    F(temperature_display) \
-    F(pin) \
-    F(voltage) \
-    F(rtccount) \
     F(finetune) \
-    F(nanosec)
+    F(nanosec) \
+    F(rtccount) 
 
 
 /* Determines the intensity of the led colors
  * Set a hex value 0-15 with 0x0 being off and 0xF being max intensity
  */
 #define MOVEMENT_DEFAULT_RED_COLOR 0xF
-#define MOVEMENT_DEFAULT_GREEN_COLOR 0xF
-#define MOVEMENT_DEFAULT_BLUE_COLOR 0xF
+#define MOVEMENT_DEFAULT_GREEN_COLOR 0x0
+#define MOVEMENT_DEFAULT_BLUE_COLOR 0x0
 
 /* Set to true for 24h mode or false for 12h mode */
 #define MOVEMENT_DEFAULT_24H_MODE true
@@ -80,7 +90,7 @@
  * 2: 5 minutes
  * 3: 30 minutes
  */
-#define MOVEMENT_DEFAULT_TIMEOUT_INTERVAL 0
+#define MOVEMENT_DEFAULT_TIMEOUT_INTERVAL 1
 
 /* Set the timeout before switching to low energy mode
  * Valid values are:
@@ -93,7 +103,7 @@
  * 6: 1 day
  * 7: 7 days
  */
-#define MOVEMENT_DEFAULT_LOW_ENERGY_INTERVAL 2
+#define MOVEMENT_DEFAULT_LOW_ENERGY_INTERVAL 1
 
 /* Set the led duration
  * Valid values are:
@@ -123,6 +133,6 @@
  * A value of 4 is a good starting point if you have issues
  * with multiple button presses firing.
 */
-#define MOVEMENT_DEBOUNCE_TICKS 0
+#define MOVEMENT_DEBOUNCE_TICKS 4
 
 #endif // MOVEMENT_CONFIG_H_

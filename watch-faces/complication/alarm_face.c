@@ -30,10 +30,6 @@
 #include "watch.h"
 #include "watch_utility.h"
 
-//
-// Private
-//
-
 static void _alarm_face_display_alarm_time(alarm_face_state_t *state) {
     uint8_t hour = state->alarms[state->alarm_index].hour;
     uint8_t minute = state->alarms[state->alarm_index].minute;
@@ -225,7 +221,7 @@ bool alarm_face_loop(movement_event_t event, void *context) {
                 case ALARM_FACE_SETTING_MODE_NONE:
                     state->alarms[state->alarm_index].enabled ^= 1;
                     _alarm_face_update_indicators(state);
-
+                    button_beep();
                     break;
                 case ALARM_FACE_SETTING_MODE_SETTING_HOUR:
                     // increment hour, wrap around to 0 at 23.
@@ -308,13 +304,30 @@ movement_watch_face_advisory_t alarm_face_advise(void *context) {
         bool play_alarm = false;
         bool play_signal = false;
 
+        // NOWA LOGIKA: Sprawdzenie, czy aktualny czas mieści się w zakresie CHIME
+        bool is_chime_time = false;
+        
+        // Konwersja czasu startu, końca i aktualnego czasu na minuty od północy dla łatwego porównania
+        uint16_t current_minutes = now.unit.hour * 60 + now.unit.minute;
+        uint16_t start_minutes = CHIME_START_HOUR * 60 + CHIME_START_MINUTE;
+        uint16_t end_minutes = CHIME_END_HOUR * 60 + CHIME_END_MINUTE;
+        
+        // Sygnał godzinowy jest aktywny, jeśli:
+        // (aktualne minuty są >= startowe minuty) ORAZ (aktualne minuty są <= końcowe minuty)
+        if (current_minutes >= start_minutes && current_minutes <= end_minutes) {
+            is_chime_time = true;
+        }
+
         for (uint8_t i = 0; i < ALARM_FACE_NUM_ALARMS; i++) {
             if (!state->alarms[i].enabled) {
                 continue;
             }
 
             if (i == ALARM_FACE_CHIME_INDEX) {
-                play_signal = state->alarms[ALARM_FACE_CHIME_INDEX].minute==now.unit.minute;
+                // Odtwarzaj sygnał tylko, jeśli jest włączony ORAZ mieści się w zakresie godzinowym
+                if (is_chime_time) {
+                    play_signal = state->alarms[ALARM_FACE_CHIME_INDEX].minute==now.unit.minute;
+                }
             } else if (i == ALARM_FACE_SNOOZE_ALARM_INDEX) {
                 bool play_snooze_alarm = (state->next_snooze_alarm.hour==now.unit.hour && state->next_snooze_alarm.minute==now.unit.minute);
                 if (play_snooze_alarm) {

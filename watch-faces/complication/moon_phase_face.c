@@ -62,6 +62,9 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
     double currentfrac = fmod(now - FIRST_MOON, LUNAR_SECONDS) / LUNAR_SECONDS;
     double currentday = currentfrac * LUNAR_DAYS;
     uint8_t phase_index = 0;
+    uint8_t currentday_int = floor(currentday);// * 10);
+    uint8_t currentday_frac = floor((currentday-currentday_int)*100);
+    uint8_t currentday_frac_ = floor((currentday-currentday_int)*10);
 
     for(phase_index = 0; phase_index <= NUM_PHASES; phase_index++) {
         if (currentday > phase_changes[phase_index] && currentday <= phase_changes[phase_index + 1]) break;
@@ -73,7 +76,24 @@ static void _update(moon_phase_state_t *state, uint32_t offset) {
         case 0:
         case 8:
             watch_display_text_with_fallback(WATCH_POSITION_BOTTOM, "NE!J  ", " Neu  ");
+            if (!state->show_lunar_day) 
             watch_display_text_with_fallback(WATCH_POSITION_TOP_LEFT, "   ", "  ");
+            else {
+            sprintf(buf, "%02d%02d",  currentday_int, currentday_frac); //aj
+            watch_display_text(WATCH_POSITION_HOURS, buf); //aj
+            watch_display_text(WATCH_POSITION_MINUTES, buf + 2); //aj
+            watch_set_colon();
+            
+            sprintf(buf, "%02d%d",  currentday_int, currentday_frac_); //aj
+            buf[0] = '7';//currentday_frac_;
+            buf[1] = '6';//currentday_frac_;
+            buf[2] = '5';//currentday_frac_;
+            
+            watch_display_text(WATCH_POSITION_TOP_LEFT, "    ");//buf);
+            //watch_display_character('E', 9); //aj
+            }
+            
+
             break;
         case 1:
             watch_display_text(WATCH_POSITION_BOTTOM, "CresNt");
@@ -184,10 +204,11 @@ bool moon_phase_face_loop(movement_event_t event, void *context) {
             state->offset += 86400;
             _update(state, state->offset);
             break;
-	    case EVENT_ALARM_LONG_PRESS:
-	        state->offset = 0;
+	case EVENT_ALARM_LONG_PRESS:
+	    state->offset = 0;
+	    state->show_lunar_day = !state->show_lunar_day; //aj
             _update(state, state->offset);
-	        break;
+	    break;
         case EVENT_LIGHT_BUTTON_DOWN:
             break;
         case EVENT_LIGHT_BUTTON_UP:

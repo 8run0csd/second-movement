@@ -59,11 +59,11 @@
 
 /* Custom alarm tune. Check movement_custom_alarm_tunes.h for options. */
 #define INCLUDE_ALARM_TUNE_GIGI_DAG
-// #define INCLUDE_ALARM_TUNE_TWINKLE
+#define INCLUDE_ALARM_TUNE_TWINKLE
 #define INCLUDE_ALARM_TUNE_BABY
 #define INCLUDE_ALARM_TUNE_INTER
 #define INCLUDE_ALARM_TUNE_ELMO
-// #define INCLUDE_ALARM_TUNE_FARM
+#define INCLUDE_ALARM_TUNE_FARM
 #define INCLUDE_ALARM_TUNE_ONEOFTHESEDAYS
 #define INCLUDE_ALARM_TUNE_BAD_APPLE                  // Bad Apple!! (Alstroemeria Records)
 #define INCLUDE_ALARM_TUNE_TO_HEART                   // Feeling Heart (ToHeart)
@@ -74,20 +74,20 @@
 #define INCLUDE_ALARM_TUNE_NAZRIN                     // A Tiny, Tiny, Clever Commander (Touhou 11)
 #define INCLUDE_ALARM_TUNE_CIRNOS_PERFECT_MATH_CLASS  // Cirno's Perfect Math Class (IOSYS)
 #define INCLUDE_ALARM_TUNE_LUCKY_STAR                 // Fun Fun Dayo (Lucky Star)
-// #define INCLUDE_ALARM_TUNE_SKYPE                      // Skype Call Music
+#define INCLUDE_ALARM_TUNE_SKYPE                      // Skype Call Music
 #define INCLUDE_ALARM_TUNE_CRAZY_FROG                 // Axel F (Crazy Frog)
 #define INCLUDE_ALARM_TUNE_CARAMELLDANSEN             // Caramelldansen (Caramella Girls)
 #define INCLUDE_ALARM_TUNE_IPHONE                     // Opening (iPhone Ringtone)
 #define INCLUDE_ALARM_TUNE_BUTTERFLY                  // Butterfly (Smile)
 #define INCLUDE_ALARM_TUNE_RUNNING_IN_THE_90S         // Running in the 90's (Max Coveri)
-// #define INCLUDE_ALARM_TUNE_FORD                       // Ford Chime
+#define INCLUDE_ALARM_TUNE_FORD                       // Ford Chime
 #define INCLUDE_ALARM_TUNE_PARTY_NIGHT                // Party Night (Di Gi Charat)
 #define INCLUDE_ALARM_TUNE_SIX_TRILLION_YEARS         // A Tale of Six Trillion Years And A Night (Ia)
 #define INCLUDE_ALARM_TUNE_GOD_KNOWS                  // God Knows... (The Melancholy of Haruhi Suzumiya)
 #define INCLUDE_ALARM_TUNE_LEVAN_POLKKA               // Levan Polkka (Eino Kettunen)
-// #define INCLUDE_ALARM_TUNE_CBAT                       // Cbat (Hudson Mohawke)
+#define INCLUDE_ALARM_TUNE_CBAT                       // Cbat (Hudson Mohawke)
 #define INCLUDE_ALARM_TUNE_PACMAN                     // Intermission (Pac-Man)
-// #define INCLUDE_ALARM_TUNE_SAMSUNG                    // Morning Flower (Samsung Ringtone)
+#define INCLUDE_ALARM_TUNE_SAMSUNG                    // Morning Flower (Samsung Ringtone)
 #define INCLUDE_ALARM_TUNE_CHEETAHMEN                 // Theme (The Cheetahmen)
 #define INCLUDE_ALARM_TUNE_CRAB_RAVE                  // Crab Rave (Noisestorm)
 #define INCLUDE_ALARM_TUNE_SONIC_1_INVINCIBILITY      // Invincibility (Sonic The Hedgehog)
@@ -96,13 +96,13 @@
 #define INCLUDE_ALARM_TUNE_SAILOR_MOON                // Moonlight Densetsu (Sailor Moon)
 #define INCLUDE_ALARM_TUNE_DRILLCHU                   // Superstrong Cavity Reconstructor DrillChu (Camellia ft. Nanahira)
 #define INCLUDE_ALARM_TUNE_UNWELCOME_SCHOOL           // Unwelcome School (Blue Archive)
-// #define INCLUDE_ALARM_TUNE_YOU                        // You (Higurashi When They Cry)
+#define INCLUDE_ALARM_TUNE_YOU                        // You (Higurashi When They Cry)
 #define INCLUDE_ALARM_TUNE_CALAMARI_INKANTATION       // Calamari Inkantation (Splatoon)
 #define INCLUDE_ALARM_TUNE_INNOCENT_STARTER           // Innocent Starter (Magical Girl Lyrical Nanoha)
 #define INCLUDE_ALARM_TUNE_SMACK_MY                   // Smack My Bitch Up (The Prodigy)
 #define INCLUDE_ALARM_TUNE_LONELY_ROLLING_STAR        // Lonely Rolling Star (Katamari Damacy)
 #define INCLUDE_ALARM_TUNE_VOICES                     // Voices (Macross Plus)
 #define INCLUDE_ALARM_TUNE_DK_ISLAND_SWING            // DK Island Swing (Donkey Kong Country)*/
-// #define INCLUDE_ALARM_TUNE_LEASE                      // Lease (My Merry May)
+#define INCLUDE_ALARM_TUNE_LEASE                      // Lease (My Merry May)
 
 #endif

@@ -42,7 +42,7 @@ void temperature_display_face_setup(uint8_t watch_face_index, void ** context_pt
     (void) watch_face_index;
     (void) context_ptr;
     // if temperature is invalid, we don't have a temperature sensor which means we shouldn't be here.
-    if (movement_get_temperature() == 0xFFFFFFFF) skip = true;
+    if (movement_get_temperature() == (float)0xFFFFFFFF) skip = true;
 }
 
 void temperature_display_face_activate(void *context) {
@@ -51,7 +51,8 @@ void temperature_display_face_activate(void *context) {
 
 bool temperature_display_face_loop(movement_event_t event, void *context) {
     (void) context;
-    watch_date_time_t date_time = watch_rtc_get_date_time();
+    watch_date_time_t date_time = movement_get_local_date_time(); 
+    //originally (legacy faces?) watch_rtc_get_date_time();
     switch (event.event_type) {
         case EVENT_ALARM_LONG_PRESS:
             movement_set_use_imperial_units(!movement_use_imperial_units());
