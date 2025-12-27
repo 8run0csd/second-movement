@@ -46,7 +46,7 @@
 #define CLOCK_FACE_LOW_BATTERY_VOLTAGE_THRESHOLD 2400
 #endif
 
-static const uint8_t QUICK_TIMERS[] = {1, 3, 6, 10, 15, 20, 25, 30, 38, 45, 60, 0};
+static const uint8_t QUICK_TIMERS[] = {1, 3, 6, 10, 15, 20, 25, 30, 38, 45, 60, 75, 90, 99, 0};
 static const uint8_t N_QUICK_TIMERS = sizeof(QUICK_TIMERS) / sizeof(uint8_t);
 static uint8_t current_quick_timer = 0;
 
@@ -772,6 +772,7 @@ bool stock_clock_face_loop(movement_event_t event, void *context)
             current = movement_get_local_date_time();
             clock_increase_quick_timer(state, current);
             clock_display_quick_timer(state, current, false);
+            _button_beep(); //aj
         }
         else
         {
@@ -780,7 +781,7 @@ bool stock_clock_face_loop(movement_event_t event, void *context)
         }
         break;
     case EVENT_ALARM_BUTTON_UP:
-        if (!state->timer_active)
+        if (false) //if (!state->timer_active) // stopwatch disabled
         {
             // Switch to stopwatch mode, starting from the time recorded at button down
             state->stopwatch_mode = true;
@@ -805,10 +806,12 @@ bool stock_clock_face_loop(movement_event_t event, void *context)
         if (state->timer_active)
         {
             clock_disable_quick_timer(state);
+            _button_beep();
         }
         else
         {
             clock_increase_quick_timer(state, current);
+            _button_beep();
         }
         clock_display_quick_timer(state, current, false);
         break;
