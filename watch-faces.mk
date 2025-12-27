@@ -62,4 +62,5 @@ SRCS += \
   ./watch-faces/clock/binary_face.c \
   ./watch-faces/clock/hexa_decimal_face.c \
   ./watch-faces/complication/ping_face.c \
+  ./watch-faces/complication/tide_face.c \
   # New watch faces go above this line.

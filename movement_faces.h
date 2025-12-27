@@ -87,6 +87,7 @@
 #include "hexa_decimal_face.h"
 #include "binary_face.h"
 #include "ping_face.h"
+#include "tide_face.h"
 //#include "tcg_life_counter_face.h"
 // New includes go above this line.
 

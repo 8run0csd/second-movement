@@ -47,6 +47,7 @@
     F(tally) \
     F(deadline) \
     F(pulsometer) \
+    F(tide) \
     F(character_set)
 
 #define TERTIARY_FACES(F) \
