@@ -40,8 +40,11 @@
 
 #define SECONDARY_FACES(F) \
     F(close_enough) \
+    F(hexa_decimal) \
+    F(binary) \
     F(ke_decimal_time) \
     F(step_counter) \
+    F(tally) \
     F(deadline) \
     F(pulsometer) \
     F(character_set)
@@ -52,6 +55,7 @@
     F(activity_logging) \
     F(accelerometer_status) \
     F(endless_runner) \
+    F(ping) \
     F(higher_lower_game) \
     F(lander) \
     F(simon) \

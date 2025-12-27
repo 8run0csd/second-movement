@@ -84,4 +84,9 @@
 #include "tunes_face.h"
 #include "page_ordering_face.h"
 #include "step_counter_face.h"
+#include "hexa_decimal_face.h"
+#include "binary_face.h"
+#include "ping_face.h"
+//#include "tcg_life_counter_face.h"
 // New includes go above this line.
+

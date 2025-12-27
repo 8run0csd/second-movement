@@ -59,4 +59,7 @@ SRCS += \
   ./watch-faces/complication/simon_face.c \
   ./watch-faces/settings/tunes_face.c \
   ./watch-faces/complication/step_counter_face.c \
-# New watch faces go above this line.
+  ./watch-faces/clock/binary_face.c \
+  ./watch-faces/clock/hexa_decimal_face.c \
+  ./watch-faces/complication/ping_face.c \
+  # New watch faces go above this line.

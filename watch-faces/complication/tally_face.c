@@ -29,6 +29,7 @@
 
 #define TALLY_FACE_MAX 9999
 #define TALLY_FACE_MIN -999
+#define TALLY_FACE_PRESETS_MTG
 
 static bool _init_val;
 static bool _quick_ticks_running;
@@ -144,11 +145,6 @@ bool tally_face_loop(movement_event_t event, void *context) {
         case EVENT_ALARM_LONG_PRESS:
             tally_face_decrement(state, movement_button_should_sound());
             start_quick_cyc();
-            break;
-        case EVENT_MODE_BUTTON_DOWN:
-            break;
-        case EVENT_MODE_BUTTON_UP:
-            movement_move_to_next_page();
             break;
         case EVENT_MODE_LONG_PRESS:
             if (tally_face_should_move_back(state)) {
