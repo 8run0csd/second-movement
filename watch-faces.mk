@@ -63,4 +63,7 @@ SRCS += \
   ./watch-faces/clock/hexa_decimal_face.c \
   ./watch-faces/complication/ping_face.c \
   ./watch-faces/complication/tide_face.c \
+  ./watch-faces/complication/tcg_life_counter_face.c \
+  ./watch-faces/complication/metronome_face.c \
+  ./watch-faces/complication/sleep_calculator_face.c \
   # New watch faces go above this line.

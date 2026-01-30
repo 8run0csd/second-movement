@@ -43,10 +43,12 @@
     F(hexa_decimal) \
     F(binary) \
     F(ke_decimal_time) \
+    F(sleep_calculator) \
     F(step_counter) \
     F(tally) \
     F(deadline) \
     F(pulsometer) \
+    F(tcg_life_counter) \
     F(tide) \
     F(character_set)
 
@@ -56,6 +58,7 @@
     F(activity_logging) \
     F(accelerometer_status) \
     F(endless_runner) \
+    F(metronome) \
     F(ping) \
     F(higher_lower_game) \
     F(lander) \

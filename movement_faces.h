@@ -88,6 +88,8 @@
 #include "binary_face.h"
 #include "ping_face.h"
 #include "tide_face.h"
-//#include "tcg_life_counter_face.h"
+#include "tcg_life_counter_face.h"
+#include "metronome_face.h"
+#include "sleep_calculator_face.h"
 // New includes go above this line.
 
